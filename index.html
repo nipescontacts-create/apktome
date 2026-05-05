@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aura | Mindset & Mastery</title>
+    
+    <meta name="theme-color" content="#1e1b4b">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Outfit:wght@300;500;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- PDF.js para leer archivos PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #0f172a; color: #f8fafc; -webkit-tap-highlight-color: transparent; }
+        .font-outfit { font-family: 'Outfit', sans-serif; }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .nav-active { color: #fbbf24; transform: translateY(-4px); transition: all 0.3s ease; }
+        .task-done { text-decoration: line-through; opacity: 0.5; }
+        .progress-bar { transition: width 0.5s ease-in-out; }
+        [v-cloak] { display: none; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="pb-24">
+
+<div id="app" v-cloak>
+    <!-- HEADER -->
+    <header class="p-6 flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-outfit font-bold bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
+                {{ greeting }}
+            </h1>
+            <p class="text-slate-400 text-sm">{{ currentDate }}</p>
+        </div>
+        <div class="w-10 h-10 rounded-full glass flex items-center justify-center border-yellow-500/50 border">
+            <i data-lucide="user" class="w-5 h-5 text-yellow-500"></i>
+        </div>
+    </header>
+
+    <main class="px-6">
+        
+        <!-- SECCIÓN: DASHBOARD -->
+        <section v-if="currentTab === 'home'" class="space-y-6">
+            <div class="glass p-6 rounded-3xl relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-4 opacity-20"><i data-lucide="quote" class="w-12 h-12 text-yellow-500"></i></div>
+                <h2 class="text-yellow-500 font-semibold mb-2 flex items-center gap-2">
+                    <i data-lucide="sparkles" class="w-4 h-4"></i> Inspiración
+                </h2>
+                <p class="text-lg italic font-light leading-relaxed">"{{ dailyQuote }}"</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="glass p-4 rounded-2xl text-center" @click="currentTab = 'tasks'">
+                    <i data-lucide="calendar" class="w-6 h-6 mx-auto mb-2 text-blue-400"></i>
+                    <span class="text-xs block">Tareas</span>
+                    <span class="text-2xl font-bold">{{ pendingTasksCount }}</span>
+                </div>
+                <div class="glass p-4 rounded-2xl text-center" @click="currentTab = 'goals'">
+                    <i data-lucide="target" class="w-6 h-6 mx-auto mb-2 text-red-400"></i>
+                    <span class="text-xs block">Objetivos</span>
+                    <span class="text-2xl font-bold">{{ goals.length }}</span>
+                </div>
+            </div>
+
+            <div class="glass p-6 rounded-3xl">
+                <h3 class="font-semibold mb-4 flex items-center gap-2"><i data-lucide="check-circle" class="w-5 h-5 text-green-400"></i> Hábitos</h3>
+                <div class="space-y-3">
+                    <div v-for="habit in habits" :key="habit.id" class="flex items-center justify-between bg-slate-800/50 p-3 rounded-xl">
+                        <span class="text-sm">{{ habit.name }}</span>
+                        <input type="checkbox" v-model="habit.done" @change="saveData" class="w-5 h-5 accent-green-500">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECCIÓN: TAREAS -->
+        <section v-if="currentTab === 'tasks'" class="space-y-6">
+            <div class="flex justify-between items-center">
+                <h2 class="text-2xl font-outfit font-bold">Mis Tareas</h2>
+                <button @click="showTaskModal = true" class="bg-yellow-500 text-black p-2 rounded-full"><i data-lucide="plus" class="w-6 h-6"></i></button>
+            </div>
+            <div class="space-y-4">
+                <div v-for="task in tasks" :key="task.id" class="glass p-4 rounded-2xl flex items-center gap-4" :class="{'opacity-60': task.completed}">
+                    <input type="checkbox" v-model="task.completed" @change="saveData" class="w-5 h-5 accent-yellow-500">
+                    <div class="flex-1">
+                        <p class="text-sm font-medium" :class="{'task-done': task.completed}">{{ task.text }}</p>
+                        <div class="flex gap-2 mt-1">
+                            <span :class="priorityClass(task.priority)" class="text-[10px] px-2 py-0.5 rounded-full uppercase font-bold">{{ task.priority }}</span>
+                            <span class="text-[10px] text-slate-400">{{ task.date }}</span>
+                        </div>
+                    </div>
+                    <button @click="deleteTask(task.id)" class="text-slate-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECCIÓN: OBJETIVOS (NUEVA) -->
+        <section v-if="currentTab === 'goals'" class="space-y-6">
+            <div class="flex justify-between items-center">
+                <h2 class="text-2xl font-outfit font-bold">Mis Metas</h2>
+                <button @click="showGoalModal = true" class="bg-yellow-500 text-black p-2 rounded-full"><i data-lucide="plus" class="w-6 h-6"></i></button>
+            </div>
+            <div class="space-y-4">
+                <div v-for="goal in goals" :key="goal.id" class="glass p-5 rounded-3xl space-y-4">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="text-[10px] px-2 py-1 rounded-full bg-slate-700 text-yellow-500 uppercase font-bold">{{ goal.category }}</span>
+                            <h3 class="text-lg font-bold mt-1">{{ goal.title }}</h3>
+                            <p class="text-xs text-slate-400 flex items-center gap-1"><i data-lucide="calendar" class="w-3 h-3"></i> Límite: {{ goal.deadline }}</p>
+                        </div>
+                        <button @click="deleteGoal(goal.id)" class="text-slate-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </div>
+                    
+                    <!-- Barra de Progreso -->
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-xs mb-1">
+                            <span>Progreso</span>
+                            <span class="font-bold text-yellow-500">{{ goal.progress }}%</span>
+                        </div>
+                        <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                            <div class="progress-bar bg-yellow-500 h-full" :style="{ width: goal.progress + '%' }"></div>
+                        </div>
+                    </div>
+
+                    <!-- Actualizaciones -->
+                    <div class="space-y-2">
+                        <div v-for="upd in goal.updates" :key="upd.date" class="text-[11px] bg-slate-800/40 p-2 rounded-lg border-l-2 border-yellow-500">
+                            <span class="text-slate-500">{{ upd.date }}:</span> {{ upd.text }}
+                        </div>
+                        <div class="flex gap-2 mt-3">
+                            <input v-model="goal.newUpdate" type="text" placeholder="Añadir avance..." class="flex-1 bg-slate-900 border border-slate-700 p-2 rounded-lg text-xs outline-none focus:border-yellow-500">
+                            <button @click="addUpdate(goal)" class="bg-yellow-500 text-black px-3 py-1 rounded-lg text-xs font-bold">OK</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECCIÓN: ESTUDIOS (NUEVA) -->
+        <section v-if="currentTab === 'studies'" class="space-y-6">
+            <h2 class="text-2xl font-outfit font-bold">Centro de Estudios</h2>
+            
+            <!-- Upload Area -->
+            <div v-if="!exam" class="glass p-8 rounded-3xl border-dashed border-2 border-slate-600 text-center space-y-4">
+                <div class="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto">
+                    <i data-lucide="file-text" class="w-8 h-8 text-yellow-500"></i>
+                </div>
+                <div>
+                    <p class="font-medium">Sube tus apuntes en PDF</p>
+                    <p class="text-xs text-slate-400">La IA analizará el texto y creará un examen único</p>
+                </div>
+                <input type="file" @change="handlePdfUpload" accept="application/pdf" class="hidden" id="pdfInput">
+                <label for="pdfInput" class="cursor-pointer bg-yellow-500 text-black px-6 py-2 rounded-full font-bold inline-block hover:bg-yellow-400 transition-colors">
+                    Seleccionar PDF
+                </label>
+            </div>
+
+            <!-- Generating State -->
+            <div v-if="isGenerating" class="glass p-10 rounded-3xl text-center space-y-4">
+                <div class="animate-spin w-10 h-10 border-4 border-yellow-500 border-t-transparent rounded-full mx-auto"></div>
+                <p class="text-lg font-medium">Analizando contenido y generando examen...</p>
+                <p class="text-xs text-slate-400 italic">Extrayendo conceptos clave y creando preguntas dinámicas...</p>
+            </div>
+
+            <!-- Exam View -->
+            <div v-if="exam && !isGenerating" class="space-y-6">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold">Examen de Repaso</h3>
+                    <button @click="exam = null" class="text-xs text-slate-400 underline">Cambiar PDF</button>
+                </div>
+                
+                <div v-for="(q, index) in exam" :key="index" class="glass p-6 rounded-3xl space-y-4">
+                    <p class="font-medium">{{ index + 1 }}. {{ q.question }}</p>
+                    <div class="grid grid-cols-1 gap-2">
+                        <button v-for="opt in q.options" :key="opt" 
+                                @click="checkAnswer(index, opt)"
+                                :class="getAnswerClass(index, opt)"
+                                class="text-left p-3 rounded-xl border border-slate-700 text-sm transition-all">
+                            {{ opt }}
+                        </button>
+                    </div>
+                </div>
+                <button @click="exam = null" class="w-full p-4 glass rounded-2xl font-bold text-yellow-500">Finalizar y Volver</button>
+            </div>
+        </section>
+
+        <!-- SECCIÓN: SABIDURÍA -->
+        <section v-if="currentTab === 'wisdom'" class="space-y-6">
+            <h2 class="text-2xl font-outfit font-bold">Santuario de Sabiduría</h2>
+            <div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+                <button v-for="cat in categories" :key="cat" @click="activeCat = cat" :class="activeCat === cat ? 'bg-yellow-500 text-black' : 'glass text-white'" class="px-4 py-2 rounded-full text-xs whitespace-nowrap transition-all">{{ cat }}</button>
+            </div>
+            <div class="space-y-4">
+                <div v-for="phrase in filteredPhrases" :key="phrase.text" class="glass p-6 rounded-3xl border-l-4 border-yellow-500">
+                    <p class="text-md italic leading-relaxed mb-3">"{{ phrase.text }}"</p>
+                    <p class="text-xs text-yellow-500 font-semibold text-right">— {{ phrase.author }}</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL TAREA -->
+    <div v-if="showTaskModal" class="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm">
+        <div class="glass w-full max-w-md p-6 rounded-3xl space-y-4">
+            <h3 class="text-xl font-bold mb-4">Nueva Tarea</h3>
+            <input v-model="newTask.text" type="text" placeholder="¿Qué hay que hacer?" class="w-full bg-slate-800 border border-slate-700 p-3 rounded-xl outline-none focus:border-yellow-500">
+            <div class="flex gap-2">
+                <select v-model="newTask.priority" class="flex-1 bg-slate-800 border border-slate-700 p-3 rounded-xl outline-none">
+                    <option value="Baja">Baja</option><option value="Media">Media</option><option value="Alta">Alta</option>
+                </select>
+                <input v-model="newTask.date" type="date" class="flex-1 bg-slate-800 border border-slate-700 p-3 rounded-xl outline-none text-sm">
+            </div>
+            <div class="flex gap-3 pt-4">
+                <button @click="showTaskModal = false" class="flex-1 p-3 rounded-xl glass">Cancelar</button>
+                <button @click="addTask" class="flex-1 p-3 rounded-xl bg-yellow-500 text-black font-bold">Añadir</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL OBJETIVO -->
+    <div v-if="showGoalModal" class="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm">
+        <div class="glass w-full max-w-md p-6 rounded-3xl space-y-4">
+            <h3 class="text-xl font-bold mb-4">Nueva Meta</h3>
+            <input v-model="newGoal.title" type="text" placeholder="Ej: Ahorrar 1000€ o Correr 10km" class="w-full bg-slate-800 border border-slate-700 p-3 rounded-xl outline-none focus:border-yellow-500">
+            <div class="flex gap-2">
+                <select v-model="newGoal.category" class="flex-1 bg-slate-800 border border-slate-700 p-3 rounded-xl outline-none">
+                    <option value="Dinero">Dinero</option><option value="Personal">Personal</option><option value="Deportivo">Deportivo</option><option value="Estudios">Estudios</option>
+                </select>
+                <input v-model="newGoal.deadline" type="date" class="flex-1 bg-slate-800 border border-slate-700 p-3 rounded-xl outline-none text-sm">
+            </div>
+            <div class="flex gap-3 pt-4">
+                <button @click="showGoalModal = false" class="flex-1 p-3 rounded-xl glass">Cancelar</button>
+                <button @click="addGoal" class="flex-1 p-3 rounded-xl bg-yellow-500 text-black font-bold">Crear Meta</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NAV -->
+    <nav class="fixed bottom-6 left-6 right-6 h-16 glass rounded-full flex items-center justify-around px-6 z-40">
+        <button @click="currentTab = 'home'" :class="{'nav-active': currentTab === 'home'}" class="flex flex-col items-center gap-1"><i data-lucide="home" class="w-6 h-6"></i><span class="text-[10px]">Inicio</span></button>
+        <button @click="currentTab = 'tasks'" :class="{'nav-active': currentTab === 'tasks'}" class="flex flex-col items-center gap-1"><i data-lucide="calendar" class="w-6 h-6"></i><span class="text-[10px]">Tareas</span></button>
+        <button @click="currentTab = 'goals'" :class="{'nav-active': currentTab === 'goals'}" class="flex flex-col items-center gap-1"><i data-lucide="target" class="w-6 h-6"></i><span class="text-[10px]">Metas</span></button>
+        <button @click="currentTab = 'studies'" :class="{'nav-active': currentTab === 'studies'}" class="flex flex-col items-center gap-1"><i data-lucide="book-open" class="w-6 h-6"></i><span class="text-[10px]">Estudios</span></button>
+        <button @click="currentTab = 'wisdom'" :class="{'nav-active': currentTab === 'wisdom'}" class="flex flex-col items-center gap-1"><i data-lucide="sparkles" class="w-6 h-6"></i><span class="text-[10px]">Saber</span></button>
+    </nav>
+</div>
+
+<script>
+    const { createApp } = Vue;
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    createApp({
+        data() {
+            return {
+                currentTab: 'home',
+                showTaskModal: false,
+                showGoalModal: false,
+                activeCat: 'Biblia',
+                categories: ['Biblia', 'Dinero', 'Estudios', 'Disciplina'],
+                greeting: 'Hola, Guerrero',
+                currentDate: new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }),
+                
+                newTask: { text: '', priority: 'Media', date: new Date().toISOString().split('T')[0] },
+                newGoal: { title: '', category: 'Personal', deadline: '', progress: 0, updates: [] },
+                
+                tasks: JSON.parse(localStorage.getItem('aura_tasks')) || [],
+                goals: JSON.parse(localStorage.getItem('aura_goals')) || [],
+                habits: JSON.parse(localStorage.getItem('aura_habits')) || [
+                    { id: 1, name: 'Lectura Espiritual', done: false },
+                    { id: 2, name: 'Estudio Enfocado', done: false },
+                    { id: 3, name: 'Planificación Financiera', done: false },
+                ],
+                
+                isGenerating: false,
+                exam: null,
+                userAnswers: {},
+
+                phrases: {
+                    'Biblia': [{ text: 'Todo lo puedo en Cristo que me fortalece.', author: 'Filipenses 4:13' }, { text: 'El Señor es mi pastor; nada me faltará.', author: 'Salmo 23:1' }],
+                    'Dinero': [{ text: 'La riqueza no consiste en tener grandes posesiones, sino en tener pocas necesidades.', author: 'Epicteto' }],
+                    'Estudios': [{ text: 'La educación es el arma más poderosa para cambiar el mundo.', author: 'Nelson Mandela' }],
+                    'Disciplina': [{ text: 'La disciplina es el puente entre las metas y los logros.', author: 'Jim Rohn' }]
+                }
+            }
+        },
+        computed: {
+            dailyQuote() {
+                const allPhrases = Object.values(this.phrases).flat();
+                return allPhrases[Math.floor(Math.random() * allPhrases.length)].text;
+            },
+            filteredPhrases() { return this.phrases[this.activeCat]; },
+            pendingTasksCount() { return this.tasks.filter(t => !t.completed).length; }
+        },
+        methods: {
+            addTask() {
+                if (!this.newTask.text) return;
+                this.tasks.push({ id: Date.now(), ...this.newTask, completed: false });
+                this.saveData();
+                this.newTask = { text: '', priority: 'Media', date: new Date().toISOString().split('T')[0] };
+                this.showTaskModal = false;
+            },
+            deleteTask(id) { this.tasks = this.tasks.filter(t => t.id !== id); this.saveData(); },
+            priorityClass(p) {
+                if (p === 'Alta') return 'bg-red-500/20 text-red-400';
+                if (p === 'Media') return 'bg-yellow-500/20 text-yellow-400';
+                return 'bg-blue-500/20 text-blue-400';
+            },
+            addGoal() {
+                if (!this.newGoal.title) return;
+                this.goals.push({ 
+                    id: Date.now(), 
+                    ...this.newGoal, 
+                    progress: 0, 
+                    updates: [], 
+                    newUpdate: '' 
+                });
+                this.saveData();
+                this.newGoal = { title: '', category: 'Personal', deadline: '', progress: 0, updates: [] };
+                this.showGoalModal = false;
+            },
+            addUpdate(goal) {
+                if (!goal.newUpdate) return;
+                const date = new Date().toLocaleDateString();
+                goal.updates.unshift({ date, text: goal.newUpdate });
+                
+                // Simulación de incremento de porcentaje basado en actualizaciones
+                if (goal.progress < 100) {
+                    goal.progress = Math.min(100, goal.progress + 10);
+                }
+                
+                goal.newUpdate = '';
+                this.saveData();
+            },
+            deleteGoal(id) { this.goals = this.goals.filter(g => g.id !== id); this.saveData(); },
+            saveData() {
+                localStorage.setItem('aura_tasks', JSON.stringify(this.tasks));
+                localStorage.setItem('aura_goals', JSON.stringify(this.goals));
+                localStorage.setItem('aura_habits', JSON.stringify(this.habits));
+            },
+            async handlePdfUpload(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                this.isGenerating = true;
+                this.exam = null;
+
+                try {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                    let fullText = "";
+                    
+                    for (let i = 1; i <= pdf.numPages; i++) {
+                        const page = await pdf.getPage(i);
+                        const textContent = await page.getTextContent();
+                        fullText += textContent.items.map(item => item.str).join(" ");
+                    }
+
+                    // Simulamos el procesamiento de la IA analizando el texto
+                    setTimeout(() => {
+                        this.generateExam(fullText);
+                        this.isGenerating = false;
+                    }, 2500);
+
+                } catch (e) {
+                    alert("Error leyendo el PDF");
+                    this.isGenerating = false;
+                }
+            },
+            generateExam(text) {
+                // El "Motor de Exámenes" improvisado
+                // En una app real, aquí enviaríamos 'text' a una API de OpenAI
+                const keywords = ["ley", "sistema", "estudio", "historia", "ciencia", "análisis", "método"];
+                const foundKeywords = keywords.filter(k => text.toLowerCase().includes(k));
+                const theme = foundKeywords.length > 0 ? foundKeywords[0] : "General";
+                
+                this.exam = [
+                    {
+                        question: `Según el documento, ¿cuál es el concepto principal relacionado con ${theme}?`,
+                        options: [`El análisis detallado de ${theme}`, `La implementación de ${theme}`, `La teoría base de ${theme}`, `Ninguna de las anteriores`],
+                        correct: 0
+                    },
+                    {
+                        question: `¿En qué contexto se menciona el desarrollo de los puntos clave en el texto?`,
+                        options: [`En el marco teórico`, `En la conclusión`, `En la introducción`, `En los anexos`],
+                        correct: 1
+                    },
+                    {
+                        question: `Si aplicamos la lógica del PDF, ¿cuál sería el resultado más probable?`,
+                        options: [`Un incremento en la eficiencia`, `Una reducción de costos`, `Una mejora en la calidad`, `Un cambio de paradigma`],
+                        correct: 2
+                    }
+                ];
+                this.userAnswers = {};
+            },
+            checkAnswer(qIndex, option) {
+                this.userAnswers[qIndex] = option;
+            },
+            getAnswerClass(qIndex, option) {
+                if (this.userAnswers[qIndex] === null) return '';
+                const correct = this.exam[qIndex].options[this.exam[qIndex].correct];
+                if (option === correct) return 'bg-green-500/30 border-green-500 text-green-200';
+                if (option === this.userAnswers[qIndex]) return 'bg-red-500/30 border-red-500 text-red-200';
+                return '';
+            },
+            updateIcons() { setTimeout(() => lucide.createIcons(), 10); }
+        },
+        mounted() {
+            lucide.createIcons();
+            const hour = new Date().getHours();
+            this.greeting = hour < 12 ? 'Buenos Días, Guerrero' : hour < 20 ? 'Buenas Tardes, Guerrero' : 'Buenas Noches, Guerrero';
+        },
+        updated() { this.updateIcons(); }
+    }).mount('#app');
+</script>
+
+</body>
+</html>
