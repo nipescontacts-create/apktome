@@ -1,0 +1,1624 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>StudyCore</title>
+<meta name="theme-color" content="#06060f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════
+   DESIGN TOKENS
+════════════════════════════════════ */
+:root {
+  /* Base */
+  --void:    #06060f;
+  --ink:     #0c0c1a;
+  --surface: #111124;
+  --raised:  #181830;
+  --border:  rgba(255,255,255,.07);
+  --border2: rgba(255,255,255,.13);
+  --border3: rgba(255,255,255,.22);
+
+  /* Accent — electric amber */
+  --a:       #f5a623;
+  --a2:      #ffbe56;
+  --a-dim:   rgba(245,166,35,.1);
+  --a-glow:  rgba(245,166,35,.2);
+
+  /* Semantic */
+  --pass:    #27ae60;
+  --pass-d:  rgba(39,174,96,.12);
+  --warn:    #e8873a;
+  --warn-d:  rgba(232,135,58,.12);
+  --fail:    #e74c3c;
+  --fail-d:  rgba(231,76,60,.12);
+  --info:    #3498db;
+  --info-d:  rgba(52,152,219,.12);
+
+  /* Type */
+  --t1: #f0f0f8;
+  --t2: #8888aa;
+  --t3: #44445a;
+
+  /* Fonts */
+  --f-display: 'Bebas Neue', sans-serif;
+  --f-mono:    'IBM Plex Mono', monospace;
+  --f-body:    'Outfit', sans-serif;
+
+  /* Layout */
+  --nav:  60px;
+  --r:    10px;
+  --r2:   6px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html { font-size: 14px; overflow: hidden; }
+
+body {
+  font-family: var(--f-body);
+  background: var(--void);
+  color: var(--t1);
+  height: 100dvh;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Subtle scanline texture */
+body::after {
+  content: '';
+  position: fixed; inset: 0; pointer-events: none; z-index: 9000;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,.03) 2px, rgba(0,0,0,.03) 4px);
+}
+
+/* ════════════════════════════════════
+   ONBOARDING
+════════════════════════════════════ */
+#onboarding {
+  position: fixed; inset: 0; z-index: 2000;
+  background: var(--void);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 28px 24px;
+  transition: opacity .5s ease, transform .6s ease;
+}
+#onboarding.exit { opacity: 0; transform: translateY(-20px) scale(.97); pointer-events: none; }
+
+.onb-step { display: none; flex-direction: column; align-items: center; width: 100%; max-width: 380px; animation: slideUp .4s cubic-bezier(.16,1,.3,1); }
+.onb-step.show { display: flex; }
+@keyframes slideUp { from { opacity:0; transform: translateY(22px); } to { opacity:1; transform: none; } }
+
+/* Logo mark */
+.onb-logo {
+  width: 64px; height: 64px;
+  border: 2px solid var(--a);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 24px; position: relative;
+}
+.onb-logo::before {
+  content: '';
+  position: absolute; inset: 4px;
+  border: 1px solid rgba(245,166,35,.3);
+}
+.onb-logo-text { font-family: var(--f-display); font-size: 24px; color: var(--a); letter-spacing: .08em; }
+
+/* Step indicators */
+.onb-steps-row { display: flex; gap: 8px; margin-bottom: 28px; }
+.onb-pip { height: 3px; width: 20px; border-radius: 2px; background: var(--border2); transition: .3s; }
+.onb-pip.on { background: var(--a); width: 32px; }
+
+.onb-label { font-family: var(--f-mono); font-size: 10px; color: var(--t3); letter-spacing: .18em; text-transform: uppercase; margin-bottom: 8px; align-self: flex-start; }
+.onb-title { font-family: var(--f-display); font-size: 36px; letter-spacing: .04em; line-height: 1; margin-bottom: 6px; text-align: center; }
+.onb-sub { font-size: 13px; color: var(--t2); line-height: 1.65; text-align: center; margin-bottom: 28px; font-weight: 300; }
+
+/* Inputs */
+.field-label { font-family: var(--f-mono); font-size: 10px; color: var(--t2); letter-spacing: .12em; text-transform: uppercase; margin-bottom: 6px; align-self: flex-start; }
+.field {
+  width: 100%; background: var(--surface); border: 1px solid var(--border2);
+  border-radius: var(--r2); padding: 13px 15px;
+  font-family: var(--f-body); font-size: 15px; color: var(--t1);
+  outline: none; transition: border-color .2s, box-shadow .2s;
+  margin-bottom: 16px;
+}
+.field:focus { border-color: var(--a); box-shadow: 0 0 0 3px var(--a-dim); }
+.field.err { animation: shk .35s ease; border-color: var(--fail); }
+@keyframes shk { 0%,100%{transform:none} 25%{transform:translateX(-7px)} 75%{transform:translateX(7px)} }
+
+/* Grades scroll */
+.grades-sc { width: 100%; max-height: 44vh; overflow-y: auto; margin-bottom: 14px; }
+.grades-sc::-webkit-scrollbar { width: 2px; }
+.grades-sc::-webkit-scrollbar-thumb { background: var(--raised); }
+
+.g-row { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r2); padding: 10px 12px; margin-bottom: 6px; }
+.g-row-name { font-family: var(--f-mono); font-size: 10px; color: var(--t2); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 8px; }
+.tri-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; }
+.tri-col { display: flex; flex-direction: column; gap: 3px; }
+.tri-col-label { font-family: var(--f-mono); font-size: 9px; color: var(--t3); letter-spacing: .1em; }
+.tri-num {
+  background: var(--raised); border: 1px solid var(--border); border-radius: 4px;
+  padding: 7px 4px; font-family: var(--f-mono); font-size: 14px; font-weight: 600;
+  color: var(--a); outline: none; text-align: center; width: 100%;
+  transition: border-color .2s;
+}
+.tri-num:focus { border-color: var(--a); }
+
+/* Trimester toggle */
+.tri-toggle { display: flex; background: var(--raised); border-radius: var(--r2); padding: 3px; width: 100%; margin-bottom: 18px; }
+.tri-opt { flex: 1; padding: 9px; border: none; background: transparent; color: var(--t2); font-family: var(--f-mono); font-size: 11px; font-weight: 600; letter-spacing: .06em; border-radius: 4px; cursor: pointer; transition: .2s; }
+.tri-opt.on { background: var(--a); color: var(--void); }
+
+/* Checkmark animation */
+.check-anim { width: 64px; height: 64px; margin-bottom: 20px; }
+.check-anim circle { fill: none; stroke: var(--a); stroke-width: 2; stroke-dasharray: 201; stroke-dashoffset: 201; animation: draw .6s .1s ease forwards; }
+.check-anim polyline { fill: none; stroke: var(--a); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 50; stroke-dashoffset: 50; animation: draw .4s .65s ease forwards; }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+
+/* Buttons */
+.btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 13px 20px; border-radius: var(--r2); font-family: var(--f-body); font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: .15s; width: 100%; letter-spacing: .02em; }
+.btn:active { transform: scale(.97); }
+.btn-amber { background: var(--a); color: var(--void); font-weight: 700; }
+.btn-amber:active { background: var(--a2); }
+.btn-ghost { background: transparent; color: var(--t2); border: 1px solid var(--border2); }
+.btn-ghost:active { background: var(--raised); }
+.btn-sm { padding: 8px 14px; font-size: 12px; font-family: var(--f-mono); letter-spacing: .06em; width: auto; border-radius: var(--r2); }
+.btn-danger { background: var(--fail-d); color: var(--fail); border: 1px solid rgba(231,76,60,.25); }
+
+/* ════════════════════════════════════
+   TOAST
+════════════════════════════════════ */
+#toast-root { position: fixed; top: 14px; left: 50%; transform: translateX(-50%); z-index: 8000; display: flex; flex-direction: column; gap: 6px; pointer-events: none; align-items: center; }
+.toast { background: var(--surface); border: 1px solid var(--border2); border-radius: 6px; padding: 9px 16px; font-family: var(--f-mono); font-size: 11px; letter-spacing: .04em; white-space: nowrap; display: flex; align-items: center; gap: 8px; animation: toastIn .25s ease; }
+.toast.out { animation: toastOut .25s ease forwards; }
+.t-ok  { border-color: rgba(39,174,96,.5);  color: var(--pass); }
+.t-war { border-color: rgba(245,166,35,.5); color: var(--a); }
+.t-err { border-color: rgba(231,76,60,.5);  color: var(--fail); }
+@keyframes toastIn  { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:none} }
+@keyframes toastOut { to{opacity:0;transform:translateY(-8px)} }
+
+/* ════════════════════════════════════
+   MODAL
+════════════════════════════════════ */
+.moverlay {
+  position: fixed; inset: 0; z-index: 600;
+  background: rgba(6,6,15,.88); backdrop-filter: blur(14px);
+  display: flex; align-items: flex-end; justify-content: center;
+  opacity: 0; transition: opacity .22s; pointer-events: none;
+}
+.moverlay.open { opacity: 1; pointer-events: all; }
+.mpanel {
+  background: var(--ink); border: 1px solid var(--border2);
+  border-radius: 16px 16px 0 0; padding: 20px 20px 34px;
+  width: 100%; max-width: 480px; max-height: 90dvh; overflow-y: auto;
+  transform: translateY(100%); transition: transform .3s cubic-bezier(.16,1,.3,1);
+}
+.moverlay.open .mpanel { transform: none; }
+.mpanel::-webkit-scrollbar { display: none; }
+.m-handle { width: 34px; height: 3px; background: var(--border2); border-radius: 2px; margin: 0 auto 18px; }
+.m-title { font-family: var(--f-display); font-size: 26px; letter-spacing: .04em; margin-bottom: 3px; }
+.m-sub { font-family: var(--f-mono); font-size: 10px; color: var(--t3); letter-spacing: .12em; text-transform: uppercase; margin-bottom: 20px; }
+
+/* Form elements */
+.form-g { margin-bottom: 14px; }
+.form-lbl { font-family: var(--f-mono); font-size: 10px; color: var(--t2); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 6px; display: block; }
+.form-inp, .form-sel, .form-ta {
+  width: 100%; background: var(--raised); border: 1px solid var(--border2);
+  border-radius: var(--r2); padding: 11px 13px;
+  font-family: var(--f-body); font-size: 14px; color: var(--t1);
+  outline: none; transition: border-color .2s, box-shadow .2s;
+}
+.form-inp:focus, .form-sel:focus, .form-ta:focus { border-color: var(--a); box-shadow: 0 0 0 3px var(--a-dim); }
+.form-sel option { background: var(--surface); }
+.form-ta { resize: vertical; min-height: 70px; }
+.divider { height: 1px; background: var(--border); margin: 14px 0; }
+
+/* ════════════════════════════════════
+   APP SHELL
+════════════════════════════════════ */
+#app { display: none; height: 100dvh; flex-direction: column; }
+#app.on { display: flex; }
+
+/* ════════════════════════════════════
+   BOTTOM NAV
+════════════════════════════════════ */
+.bnav {
+  height: var(--nav); flex-shrink: 0;
+  background: var(--ink); border-top: 1px solid var(--border2);
+  display: grid; grid-template-columns: repeat(5,1fr);
+  position: relative; z-index: 100;
+}
+.bnav-item {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px; cursor: pointer; color: var(--t3); border: none; background: none;
+  transition: color .2s; padding: 6px 0; position: relative;
+}
+.bnav-item.on { color: var(--a); }
+.bnav-item.on::after { content: ''; position: absolute; top: 0; left: 28%; right: 28%; height: 2px; background: var(--a); border-radius: 0 0 3px 3px; }
+.bnav-lbl { font-family: var(--f-mono); font-size: 9px; letter-spacing: .07em; text-transform: uppercase; }
+
+/* ════════════════════════════════════
+   SCREENS
+════════════════════════════════════ */
+.screens { flex: 1; overflow: hidden; position: relative; }
+.screen { position: absolute; inset: 0; overflow-y: auto; padding: 0 16px calc(16px); display: none; flex-direction: column; }
+.screen.on { display: flex; }
+.screen::-webkit-scrollbar { display: none; }
+
+/* Screen header */
+.s-head { display: flex; align-items: flex-end; justify-content: space-between; padding: 14px 0 14px; flex-shrink: 0; }
+.s-title { font-family: var(--f-display); font-size: 34px; letter-spacing: .04em; line-height: 1; }
+.s-sub { font-family: var(--f-mono); font-size: 10px; color: var(--t3); letter-spacing: .1em; text-transform: uppercase; margin-top: 3px; }
+
+/* ════════════════════════════════════
+   DASHBOARD COMPONENTS
+════════════════════════════════════ */
+
+/* Top bar */
+.dash-bar { display: flex; align-items: flex-start; justify-content: space-between; padding: 14px 0 12px; flex-shrink: 0; }
+.dash-greeting-eye { font-family: var(--f-mono); font-size: 9px; color: var(--t3); letter-spacing: .16em; text-transform: uppercase; margin-bottom: 4px; }
+.dash-name { font-family: var(--f-display); font-size: 30px; letter-spacing: .04em; line-height: 1; }
+.dash-name em { color: var(--a); font-style: normal; }
+.dash-badge { font-family: var(--f-mono); font-size: 9px; letter-spacing: .08em; background: var(--surface); border: 1px solid var(--border2); padding: 5px 9px; border-radius: 4px; color: var(--t2); text-align: right; line-height: 1.6; }
+.dash-badge span { color: var(--a); }
+
+/* Primary metric card */
+.prime-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 16px; margin-bottom: 10px;
+  flex-shrink: 0; position: relative; overflow: hidden;
+}
+.prime-card::before {
+  content: ''; position: absolute; right: -24px; top: -24px;
+  width: 110px; height: 110px; border-radius: 50%;
+  background: radial-gradient(circle, var(--a-glow), transparent 70%);
+  pointer-events: none;
+}
+.prime-grid { display: grid; grid-template-columns: 1fr 1px 1fr; gap: 0; }
+.prime-sep { background: var(--border); }
+.prime-block { padding: 0 16px; }
+.prime-block:first-child { padding-left: 0; }
+.prime-block:last-child { padding-right: 0; }
+.prime-eyebrow { font-family: var(--f-mono); font-size: 9px; color: var(--t3); letter-spacing: .14em; text-transform: uppercase; margin-bottom: 5px; }
+.prime-num { font-family: var(--f-mono); font-size: 44px; font-weight: 700; line-height: 1; letter-spacing: -.03em; }
+.prime-num.c-pass { color: var(--pass); }
+.prime-num.c-warn { color: var(--warn); }
+.prime-num.c-fail { color: var(--fail); }
+.prime-num.c-amber { color: var(--a); }
+.prime-unit { font-family: var(--f-mono); font-size: 10px; color: var(--t3); margin-top: 3px; letter-spacing: .06em; }
+
+/* Progress row below prime */
+.prog-row { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 12px; }
+.prog-label-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
+.prog-label { font-family: var(--f-mono); font-size: 9px; color: var(--t3); letter-spacing: .1em; text-transform: uppercase; }
+.prog-val { font-family: var(--f-mono); font-size: 11px; font-weight: 600; color: var(--a); }
+.pbar-track { height: 3px; background: var(--raised); border-radius: 2px; overflow: hidden; }
+.pbar-fill { height: 100%; border-radius: 2px; transition: width .8s cubic-bezier(.16,1,.3,1); }
+.pbar-amber { background: var(--a); }
+.pbar-pass  { background: var(--pass); }
+.pbar-info  { background: var(--info); }
+
+/* 3-col stat strip */
+.stat-strip { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 10px; flex-shrink: 0; }
+.stat-tile { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 12px 10px; }
+.st-eye { font-family: var(--f-mono); font-size: 9px; color: var(--t3); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 6px; }
+.st-num { font-family: var(--f-mono); font-size: 26px; font-weight: 700; line-height: 1; letter-spacing: -.02em; }
+.st-num.c-pass   { color: var(--pass); }
+.st-num.c-warn   { color: var(--warn); }
+.st-num.c-amber  { color: var(--a); }
+.st-num.c-info   { color: var(--info); }
+.st-num.c-muted  { color: var(--t2); }
+.st-sub { font-family: var(--f-mono); font-size: 9px; color: var(--t3); margin-top: 3px; }
+
+/* Section label */
+.sec { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; flex-shrink: 0; }
+.sec-name { font-family: var(--f-mono); font-size: 9px; color: var(--t3); letter-spacing: .14em; text-transform: uppercase; }
+.sec-act { font-family: var(--f-mono); font-size: 9px; color: var(--a); letter-spacing: .08em; text-transform: uppercase; cursor: pointer; background: none; border: none; }
+
+/* Best/worst row */
+.bw-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; flex-shrink: 0; }
+.bw-tile { border-radius: var(--r); padding: 11px 12px; border: 1px solid; }
+.bw-pass { background: var(--pass-d); border-color: rgba(39,174,96,.2); }
+.bw-fail { background: var(--fail-d); border-color: rgba(231,76,60,.2); }
+.bw-eye { font-family: var(--f-mono); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 4px; }
+.bw-pass .bw-eye { color: var(--pass); }
+.bw-fail .bw-eye { color: var(--fail); }
+.bw-subj { font-size: 12px; font-weight: 600; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bw-num { font-family: var(--f-mono); font-size: 22px; font-weight: 700; letter-spacing: -.02em; }
+.bw-pass .bw-num { color: var(--pass); }
+.bw-fail .bw-num { color: var(--fail); }
+
+/* Heatmap */
+.hmap-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 13px 14px; margin-bottom: 10px; flex-shrink: 0; }
+.hmap-grid { display: flex; gap: 3px; }
+.hmap-col  { display: flex; flex-direction: column; gap: 3px; }
+.hmap-cell { width: 11px; height: 11px; border-radius: 2px; background: var(--raised); transition: background .3s; flex-shrink: 0; }
+.hc1 { background: rgba(245,166,35,.2); }
+.hc2 { background: rgba(245,166,35,.45); }
+.hc3 { background: rgba(245,166,35,.72); }
+.hc4 { background: var(--a); }
+.hmap-legend { display: flex; align-items: center; gap: 5px; margin-top: 8px; }
+.hmap-leg-lbl { font-family: var(--f-mono); font-size: 9px; color: var(--t3); letter-spacing: .06em; }
+
+/* Goal progress rings mini */
+.goals-mini { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; flex-shrink: 0; }
+.goal-mini-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 11px; display: flex; align-items: center; gap: 10px; }
+.gmc-ring { flex-shrink: 0; position: relative; width: 38px; height: 38px; }
+.gmc-ring svg { transform: rotate(-90deg); }
+.gmc-ring-bg { fill: none; stroke: var(--raised); stroke-width: 4; }
+.gmc-ring-fg { fill: none; stroke-width: 4; stroke-linecap: round; transition: stroke-dashoffset .7s cubic-bezier(.16,1,.3,1); }
+.gmc-pct { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--f-mono); font-size: 9px; font-weight: 700; color: var(--t1); }
+.gmc-info { flex: 1; min-width: 0; }
+.gmc-label { font-family: var(--f-mono); font-size: 9px; color: var(--t3); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 3px; }
+.gmc-val { font-family: var(--f-mono); font-size: 16px; font-weight: 700; color: var(--t1); }
+.gmc-sub { font-size: 11px; color: var(--t2); }
+
+/* ════════════════════════════════════
+   TASK ITEMS
+════════════════════════════════════ */
+.task-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 12px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r2); margin-bottom: 6px; transition: border-color .2s;
+}
+.task-item.done { opacity: .4; }
+.task-cb {
+  width: 20px; height: 20px; border: 1.5px solid var(--border3); border-radius: 3px;
+  flex-shrink: 0; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: .2s;
+}
+.task-item.done .task-cb { background: var(--pass); border-color: var(--pass); }
+.task-cb-mark { display: none; color: var(--void); }
+.task-item.done .task-cb-mark { display: block; }
+.task-body { flex: 1; min-width: 0; }
+.task-title-txt { font-size: 13px; font-weight: 500; line-height: 1.3; }
+.task-item.done .task-title-txt { text-decoration: line-through; color: var(--t3); }
+.task-meta-txt { font-family: var(--f-mono); font-size: 10px; color: var(--t3); margin-top: 2px; letter-spacing: .03em; }
+.task-pri-bar { width: 3px; height: 32px; border-radius: 2px; flex-shrink: 0; }
+.tp-h { background: var(--fail); }
+.tp-m { background: var(--warn); }
+.tp-l { background: var(--pass); }
+.task-del { color: var(--t3); cursor: pointer; padding: 4px; background: none; border: none; flex-shrink: 0; }
+.task-del:active { color: var(--fail); }
+
+/* Filter chips */
+.chip-row { display: flex; gap: 6px; margin-bottom: 12px; flex-shrink: 0; }
+.chip { font-family: var(--f-mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; padding: 6px 12px; border-radius: 4px; border: 1px solid var(--border2); background: transparent; color: var(--t3); cursor: pointer; transition: .2s; white-space: nowrap; }
+.chip.on { background: var(--a-dim); color: var(--a); border-color: rgba(245,166,35,.35); }
+
+/* ════════════════════════════════════
+   GOALS
+════════════════════════════════════ */
+.tab-row { display: flex; background: var(--raised); border-radius: var(--r2); padding: 3px; margin-bottom: 12px; flex-shrink: 0; }
+.tab-opt { flex: 1; padding: 8px; border: none; background: transparent; color: var(--t2); font-family: var(--f-mono); font-size: 11px; font-weight: 600; border-radius: 4px; cursor: pointer; transition: .2s; letter-spacing: .06em; text-transform: uppercase; }
+.tab-opt.on { background: var(--a); color: var(--void); }
+
+.goal-card { display: flex; gap: 10px; padding: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r2); margin-bottom: 6px; }
+.goal-accent { width: 3px; flex-shrink: 0; border-radius: 2px; }
+.goal-body { flex: 1; cursor: pointer; }
+.goal-t { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+.goal-s { font-family: var(--f-mono); font-size: 10px; color: var(--t3); letter-spacing: .04em; margin-bottom: 8px; }
+.goal-prow { display: flex; align-items: center; gap: 8px; }
+.goal-pval { font-family: var(--f-mono); font-size: 12px; font-weight: 700; min-width: 34px; }
+
+/* ════════════════════════════════════
+   GRADES
+════════════════════════════════════ */
+.grade-tabs { display: flex; gap: 5px; margin-bottom: 12px; overflow-x: auto; flex-shrink: 0; }
+.grade-tabs::-webkit-scrollbar { display: none; }
+.gtab { flex-shrink: 0; padding: 6px 12px; border: 1px solid var(--border); background: transparent; color: var(--t3); font-family: var(--f-mono); font-size: 10px; font-weight: 600; border-radius: 4px; cursor: pointer; transition: .2s; letter-spacing: .06em; text-transform: uppercase; }
+.gtab.on { background: var(--a-dim); color: var(--a); border-color: rgba(245,166,35,.35); }
+
+/* Grade summary card */
+.g-sum { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 14px; margin-bottom: 10px; flex-shrink: 0; }
+.g-sum-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+.gsb { }
+.gsb-eye { font-family: var(--f-mono); font-size: 9px; color: var(--t3); letter-spacing: .12em; text-transform: uppercase; margin-bottom: 5px; }
+.gsb-val { font-family: var(--f-mono); font-size: 34px; font-weight: 700; line-height: 1; letter-spacing: -.03em; }
+
+/* Subject card */
+.subj-c { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 12px; margin-bottom: 8px; cursor: pointer; transition: border-color .15s; }
+.subj-c:active { border-color: var(--a); }
+.subj-c-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 9px; }
+.subj-c-name { font-family: var(--f-display); font-size: 17px; letter-spacing: .05em; text-transform: uppercase; }
+.subj-c-avg { font-family: var(--f-mono); font-size: 30px; font-weight: 700; letter-spacing: -.03em; }
+.tri-boxes { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; }
+.tbox { background: var(--raised); border-radius: 5px; padding: 8px 6px; text-align: center; }
+.tbox-eye { font-family: var(--f-mono); font-size: 9px; color: var(--t3); letter-spacing: .08em; text-transform: uppercase; }
+.tbox-val { font-family: var(--f-mono); font-size: 18px; font-weight: 700; margin-top: 2px; letter-spacing: -.01em; }
+.tbox-pts { font-family: var(--f-mono); font-size: 9px; color: var(--t3); margin-top: 1px; }
+
+/* Grade entry */
+.g-entry { display: flex; align-items: center; gap: 10px; padding: 9px 10px; background: var(--raised); border-radius: 5px; margin-bottom: 4px; }
+.g-entry-val { font-family: var(--f-mono); font-size: 20px; font-weight: 700; min-width: 42px; letter-spacing: -.02em; }
+.g-entry-info { flex: 1; }
+.g-entry-name { font-size: 12px; font-weight: 500; }
+.g-entry-meta { font-family: var(--f-mono); font-size: 10px; color: var(--t3); letter-spacing: .03em; }
+.g-entry-del { background: none; border: none; color: var(--t3); cursor: pointer; padding: 3px; }
+
+/* ════════════════════════════════════
+   POMODORO
+════════════════════════════════════ */
+.pom-center-wrap { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; padding: 4px 0 16px; }
+.pom-mode-eye { font-family: var(--f-mono); font-size: 9px; color: var(--t3); letter-spacing: .18em; text-transform: uppercase; margin-bottom: 14px; }
+.pom-ring-wrap { position: relative; width: 186px; height: 186px; margin-bottom: 16px; }
+.pom-ring-wrap svg { transform: rotate(-90deg); }
+.pr-bg { fill: none; stroke: var(--raised); stroke-width: 7; }
+.pr-fg { fill: none; stroke-width: 7; stroke-linecap: round; transition: stroke-dashoffset .5s ease; }
+.pom-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.pom-time-txt { font-family: var(--f-mono); font-size: 48px; font-weight: 700; letter-spacing: -.04em; line-height: 1; }
+.pom-st-lbl { font-family: var(--f-mono); font-size: 9px; color: var(--t3); letter-spacing: .1em; text-transform: uppercase; margin-top: 4px; }
+
+.pom-dots { display: flex; gap: 6px; margin-bottom: 16px; }
+.pom-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--raised); transition: .3s; }
+.pom-dot.done { background: var(--a); }
+
+.pom-btns { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; }
+.pom-btn-side { width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--border2); background: var(--raised); color: var(--t2); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: .15s; }
+.pom-btn-side:active { transform: scale(.9); }
+.pom-btn-main { width: 62px; height: 62px; border-radius: 50%; border: none; background: var(--a); color: var(--void); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: .15s; }
+.pom-btn-main:active { transform: scale(.9); background: var(--a2); }
+
+.pom-settings { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; width: 100%; max-width: 290px; }
+.ps-item { background: var(--raised); border: 1px solid var(--border); border-radius: var(--r2); padding: 10px 8px; text-align: center; cursor: pointer; transition: .15s; }
+.ps-item:active { border-color: var(--a); }
+.ps-eye { font-family: var(--f-mono); font-size: 9px; color: var(--t3); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 4px; }
+.ps-val { font-family: var(--f-mono); font-size: 20px; font-weight: 700; color: var(--a); letter-spacing: -.02em; }
+
+/* ════════════════════════════════════
+   STUDY LOG
+════════════════════════════════════ */
+.log-item { display: flex; align-items: center; gap: 10px; padding: 9px 11px; background: var(--raised); border-radius: var(--r2); margin-bottom: 5px; }
+.log-ico { color: var(--t3); flex-shrink: 0; }
+.log-info { flex: 1; }
+.log-t { font-size: 12px; font-weight: 500; }
+.log-m { font-family: var(--f-mono); font-size: 10px; color: var(--t3); letter-spacing: .03em; }
+.log-dur { font-family: var(--f-mono); font-size: 16px; font-weight: 700; color: var(--a); letter-spacing: -.02em; }
+
+/* Empty state */
+.empty { text-align: center; padding: 28px 16px; }
+.empty-ico { color: var(--t3); margin-bottom: 10px; }
+.empty-txt { font-family: var(--f-mono); font-size: 10px; color: var(--t3); letter-spacing: .1em; text-transform: uppercase; }
+
+/* Color picker dots */
+.cpick { display: flex; gap: 8px; }
+.cpick-dot { width: 26px; height: 26px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: .2s; }
+.cpick-dot.on { border-color: var(--t1); transform: scale(1.1); }
+
+/* Badges */
+.badge { display: inline-flex; align-items: center; gap: 3px; padding: 3px 7px; border-radius: 3px; font-family: var(--f-mono); font-size: 9px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+.b-pass  { background: var(--pass-d); color: var(--pass); }
+.b-warn  { background: var(--warn-d); color: var(--warn); }
+.b-fail  { background: var(--fail-d); color: var(--fail); }
+.b-amber { background: var(--a-dim);  color: var(--a); }
+.b-info  { background: var(--info-d); color: var(--info); }
+
+/* S24 responsive */
+@media (max-width: 360px) {
+  .prime-num { font-size: 36px; }
+  .pom-time-txt { font-size: 40px; }
+  .pom-ring-wrap { width: 168px; height: 168px; }
+  .st-num { font-size: 22px; }
+}
+@media (max-height: 740px) {
+  .dash-bar { padding-top: 10px; padding-bottom: 8px; }
+  .prime-card { padding: 12px; }
+  .stat-strip { margin-bottom: 8px; }
+}
+</style>
+</head>
+<body>
+
+<div id="toast-root"></div>
+
+<!-- ══════════════════════════════════════
+     ONBOARDING
+══════════════════════════════════════ -->
+<div id="onboarding">
+  <div class="onb-steps-row">
+    <div class="onb-pip on" id="pip0"></div>
+    <div class="onb-pip" id="pip1"></div>
+    <div class="onb-pip" id="pip2"></div>
+  </div>
+
+  <!-- STEP 0 — Name -->
+  <div class="onb-step show" id="os0">
+    <div class="onb-logo"><div class="onb-logo-text">SC</div></div>
+    <div class="onb-label">Sistema de alto rendimiento</div>
+    <div class="onb-title">Bienvenido a StudyCore</div>
+    <div class="onb-sub">Tu plataforma académica personal para gestionar notas, objetivos y tiempo de estudio.</div>
+    <div class="field-label">Nombre de usuario</div>
+    <input class="field" id="ob-name" type="text" placeholder="Tu nombre..." maxlength="28" autocomplete="off">
+    <button class="btn btn-amber" onclick="obNext(0)">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      Continuar
+    </button>
+  </div>
+
+  <!-- STEP 1 — Grades -->
+  <div class="onb-step" id="os1">
+    <div class="onb-title">Calificaciones</div>
+    <div class="onb-sub" style="margin-bottom:16px">Introduce tu media por trimestre (0–10). Deja vacío si no ha pasado.</div>
+    <div class="grades-sc" id="ob-grades-container"></div>
+    <div class="field-label" style="align-self:flex-start;margin-bottom:6px">Trimestre actual</div>
+    <div class="tri-toggle" id="tri-toggle">
+      <button class="tri-opt" onclick="setTri(1)">T1</button>
+      <button class="tri-opt" onclick="setTri(2)">T2</button>
+      <button class="tri-opt on" onclick="setTri(3)">T3</button>
+    </div>
+    <div style="display:flex;gap:8px;width:100%">
+      <button class="btn btn-ghost" style="flex:1" onclick="obBack()">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Atrás
+      </button>
+      <button class="btn btn-amber" style="flex:2" onclick="obNext(1)">Siguiente</button>
+    </div>
+  </div>
+
+  <!-- STEP 2 — Done -->
+  <div class="onb-step" id="os2">
+    <svg class="check-anim" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="32" cy="32" r="30"/>
+      <polyline points="19 32 27 41 45 23"/>
+    </svg>
+    <div class="onb-label">Sistema listo</div>
+    <div class="onb-title">Todo configurado,<br><span style="color:var(--a)" id="ob-final-name"></span></div>
+    <div class="onb-sub">StudyCore está activo. Hora de rendir al máximo.</div>
+    <button class="btn btn-amber" onclick="obFinish()">
+      Entrar a StudyCore
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     APP
+══════════════════════════════════════ -->
+<div id="app">
+  <div class="screens">
+
+    <!-- ─── HOME ─── -->
+    <div class="screen on" id="s-home">
+      <!-- Top bar -->
+      <div class="dash-bar">
+        <div>
+          <div class="dash-greeting-eye" id="g-time">Buenos días</div>
+          <div class="dash-name">Hola, <em id="g-name">—</em></div>
+        </div>
+        <div class="dash-badge">SC&nbsp;<span>v3.0</span><br>ACTIVO</div>
+      </div>
+
+      <!-- Primary card: average + trimester -->
+      <div class="prime-card">
+        <div class="prime-grid">
+          <div class="prime-block">
+            <div class="prime-eyebrow">Media global</div>
+            <div class="prime-num" id="d-avg">—</div>
+            <div class="prime-unit">de 10.00</div>
+          </div>
+          <div class="prime-sep"></div>
+          <div class="prime-block">
+            <div class="prime-eyebrow">Trimestre</div>
+            <div class="prime-num c-amber" id="d-tri">T3</div>
+            <div class="prime-unit">en curso</div>
+          </div>
+        </div>
+        <div class="prog-row">
+          <div class="prog-label-row">
+            <span class="prog-label">Progreso hacia el 10</span>
+            <span class="prog-val" id="d-prog-pct">0%</span>
+          </div>
+          <div class="pbar-track"><div class="pbar-fill pbar-amber" id="d-prog-bar" style="width:0%"></div></div>
+        </div>
+      </div>
+
+      <!-- 3-col strip -->
+      <div class="stat-strip">
+        <div class="stat-tile">
+          <div class="st-eye">Tareas</div>
+          <div class="st-num c-info" id="d-tasks-n">0</div>
+          <div class="st-sub">pendientes</div>
+        </div>
+        <div class="stat-tile">
+          <div class="st-eye">Objetivos</div>
+          <div class="st-num c-amber" id="d-goals-pct">0%</div>
+          <div class="st-sub">sem. hechos</div>
+        </div>
+        <div class="stat-tile">
+          <div class="st-eye">Sesiones</div>
+          <div class="st-num c-pass" id="d-pom-n">0</div>
+          <div class="st-sub">hoy</div>
+        </div>
+      </div>
+
+      <!-- Best / worst -->
+      <div class="bw-row">
+        <div class="bw-tile bw-pass">
+          <div class="bw-eye">Mejor</div>
+          <div class="bw-subj" id="d-best-n">—</div>
+          <div class="bw-num" id="d-best-v">—</div>
+        </div>
+        <div class="bw-tile bw-fail">
+          <div class="bw-eye">Mejorable</div>
+          <div class="bw-subj" id="d-worst-n">—</div>
+          <div class="bw-num" id="d-worst-v">—</div>
+        </div>
+      </div>
+
+      <!-- Goals mini rings -->
+      <div class="sec">
+        <span class="sec-name">Objetivos</span>
+        <button class="sec-act" onclick="nav('goals')">Ver todos</button>
+      </div>
+      <div class="goals-mini" id="d-goals-mini"></div>
+
+      <!-- Heatmap -->
+      <div class="hmap-card">
+        <div class="sec" style="margin-bottom:8px">
+          <span class="sec-name">Actividad — 4 semanas</span>
+        </div>
+        <div class="hmap-grid" id="d-hmap"></div>
+        <div class="hmap-legend">
+          <span class="hmap-leg-lbl">Menos</span>
+          <div class="hmap-cell"></div>
+          <div class="hmap-cell hc1"></div>
+          <div class="hmap-cell hc2"></div>
+          <div class="hmap-cell hc3"></div>
+          <div class="hmap-cell hc4"></div>
+          <span class="hmap-leg-lbl">Más</span>
+        </div>
+      </div>
+
+      <!-- Task preview -->
+      <div class="sec">
+        <span class="sec-name">Próximas tareas</span>
+        <button class="sec-act" onclick="nav('tasks')">Ver todas</button>
+      </div>
+      <div id="d-tasks-preview"></div>
+      <div style="height:6px"></div>
+    </div><!-- /home -->
+
+    <!-- ─── TASKS ─── -->
+    <div class="screen" id="s-tasks">
+      <div class="s-head">
+        <div><div class="s-title">Tareas</div><div class="s-sub">Organización diaria</div></div>
+        <button class="btn btn-amber btn-sm" onclick="openM('m-task')">+ Nueva</button>
+      </div>
+      <div class="chip-row">
+        <button class="chip on" id="ch-all" onclick="setFilter('all')">Todas</button>
+        <button class="chip" id="ch-pending" onclick="setFilter('pending')">Pendientes</button>
+        <button class="chip" id="ch-done" onclick="setFilter('done')">Completadas</button>
+      </div>
+      <div id="tasks-list"></div>
+      <div style="height:6px"></div>
+    </div>
+
+    <!-- ─── GOALS ─── -->
+    <div class="screen" id="s-goals">
+      <div class="s-head">
+        <div><div class="s-title">Objetivos</div><div class="s-sub">Metas activas</div></div>
+        <button class="btn btn-amber btn-sm" id="g-add-btn" onclick="openAddGoal()">+ Meta</button>
+      </div>
+      <div class="tab-row">
+        <button class="tab-opt on" id="gt-weekly" onclick="setGoalTab('weekly')">Semanales</button>
+        <button class="tab-opt" id="gt-global" onclick="setGoalTab('global')">Globales</button>
+      </div>
+      <div id="goals-list"></div>
+      <div style="height:6px"></div>
+    </div>
+
+    <!-- ─── GRADES ─── -->
+    <div class="screen" id="s-grades">
+      <div class="s-head">
+        <div><div class="s-title">Notas</div><div class="s-sub">Rendimiento académico</div></div>
+        <button class="btn btn-amber btn-sm" onclick="openM('m-grade')">+ Nota</button>
+      </div>
+      <!-- Summary -->
+      <div class="g-sum">
+        <div class="g-sum-grid">
+          <div class="gsb">
+            <div class="gsb-eye">Media</div>
+            <div class="gsb-val" id="gr-avg">—</div>
+          </div>
+          <div class="gsb">
+            <div class="gsb-eye">Trimestre</div>
+            <div class="gsb-val" style="color:var(--a)" id="gr-tri-lbl">T3</div>
+          </div>
+          <div class="gsb">
+            <div class="gsb-eye">Materias</div>
+            <div class="gsb-val" style="color:var(--t2)">10</div>
+          </div>
+        </div>
+      </div>
+      <div class="grade-tabs">
+        <button class="gtab on" onclick="setGView('overview')">Resumen</button>
+        <button class="gtab" onclick="setGView('t1')">T1 · 33%</button>
+        <button class="gtab" onclick="setGView('t2')">T2 · 33%</button>
+        <button class="gtab" onclick="setGView('t3')">T3 · 34%</button>
+      </div>
+      <div id="grades-content"></div>
+      <div style="height:6px"></div>
+    </div>
+
+    <!-- ─── POMODORO ─── -->
+    <div class="screen" id="s-pomodoro">
+      <div class="s-head">
+        <div><div class="s-title">Pomodoro</div><div class="s-sub">Enfoque profundo</div></div>
+      </div>
+      <div class="pom-center-wrap">
+        <div class="pom-mode-eye" id="pom-eye">ENFOQUE</div>
+        <div class="pom-ring-wrap">
+          <svg width="186" height="186" viewBox="0 0 186 186">
+            <circle class="pr-bg" cx="93" cy="93" r="84"/>
+            <circle class="pr-fg" id="pom-ring" cx="93" cy="93" r="84"
+              stroke-dasharray="527.8" stroke-dashoffset="0" stroke="var(--a)"/>
+          </svg>
+          <div class="pom-overlay">
+            <div class="pom-time-txt" id="pom-time">25:00</div>
+            <div class="pom-st-lbl" id="pom-st">pausado</div>
+          </div>
+        </div>
+        <div class="pom-dots" id="pom-dots"></div>
+        <div class="pom-btns">
+          <button class="pom-btn-side" onclick="pomReset()" title="Reiniciar">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          </button>
+          <button class="pom-btn-main" id="pom-play" onclick="pomToggle()">
+            <svg id="pom-ico" width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          </button>
+          <button class="pom-btn-side" onclick="pomSkip()" title="Saltar">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+          </button>
+        </div>
+        <div class="pom-settings">
+          <div class="ps-item" onclick="pomCfg('focus')"><div class="ps-eye">Enfoque</div><div class="ps-val" id="ps-f">25m</div></div>
+          <div class="ps-item" onclick="pomCfg('short')"><div class="ps-eye">Descanso</div><div class="ps-val" id="ps-s">5m</div></div>
+          <div class="ps-item" onclick="pomCfg('long')"><div class="ps-eye">Largo</div><div class="ps-val" id="ps-l">15m</div></div>
+        </div>
+      </div>
+      <div class="sec" style="margin-top:4px"><span class="sec-name">Sesiones de hoy</span></div>
+      <div id="pom-hist"></div>
+      <div style="height:6px"></div>
+    </div>
+
+  </div><!-- /screens -->
+
+  <!-- ─── BOTTOM NAV ─── -->
+  <nav class="bnav">
+    <button class="bnav-item on" id="nav-home" onclick="nav('home')">
+      <svg width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span class="bnav-lbl">Inicio</span>
+    </button>
+    <button class="bnav-item" id="nav-tasks" onclick="nav('tasks')">
+      <svg width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      <span class="bnav-lbl">Tareas</span>
+    </button>
+    <button class="bnav-item" id="nav-goals" onclick="nav('goals')">
+      <svg width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+      <span class="bnav-lbl">Objetivos</span>
+    </button>
+    <button class="bnav-item" id="nav-grades" onclick="nav('grades')">
+      <svg width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span class="bnav-lbl">Notas</span>
+    </button>
+    <button class="bnav-item" id="nav-pomodoro" onclick="nav('pomodoro')">
+      <svg width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span class="bnav-lbl">Pomodoro</span>
+    </button>
+  </nav>
+</div><!-- /app -->
+
+<!-- ══════════════════════════════════════
+     MODALS
+══════════════════════════════════════ -->
+
+<!-- Task -->
+<div class="moverlay" id="m-task" onclick="mOut(event,'m-task')">
+  <div class="mpanel">
+    <div class="m-handle"></div>
+    <div class="m-title">Nueva tarea</div>
+    <div class="m-sub">Añadir ítem</div>
+    <div class="form-g"><label class="form-lbl">Título</label><input class="form-inp" id="t-tit" placeholder="¿Qué tienes que hacer?" autocomplete="off"></div>
+    <div class="form-g"><label class="form-lbl">Asignatura</label><select class="form-sel" id="t-subj"><option value="">Sin asignatura</option></select></div>
+    <div class="form-g"><label class="form-lbl">Fecha límite</label><input class="form-inp" id="t-date" type="date"></div>
+    <div class="form-g"><label class="form-lbl">Prioridad</label><select class="form-sel" id="t-pri"><option value="high">Alta</option><option value="med" selected>Media</option><option value="low">Baja</option></select></div>
+    <button class="btn btn-amber" onclick="addTask()">Añadir tarea</button>
+  </div>
+</div>
+
+<!-- Goal -->
+<div class="moverlay" id="m-goal" onclick="mOut(event,'m-goal')">
+  <div class="mpanel">
+    <div class="m-handle"></div>
+    <div class="m-title" id="gm-title">Nuevo objetivo</div>
+    <div class="m-sub" id="gm-sub">Meta semanal</div>
+    <div class="form-g"><label class="form-lbl">Objetivo</label><input class="form-inp" id="g-tit" placeholder="¿Qué quieres lograr?" autocomplete="off"></div>
+    <div class="form-g"><label class="form-lbl">Descripción</label><textarea class="form-ta" id="g-desc" placeholder="Detalles..."></textarea></div>
+    <div class="form-g">
+      <label class="form-lbl">Color</label>
+      <div class="cpick">
+        <div class="cpick-dot on" style="background:#f5a623" data-c="#f5a623" onclick="pickC(this)"></div>
+        <div class="cpick-dot" style="background:#27ae60" data-c="#27ae60" onclick="pickC(this)"></div>
+        <div class="cpick-dot" style="background:#3498db" data-c="#3498db" onclick="pickC(this)"></div>
+        <div class="cpick-dot" style="background:#e74c3c" data-c="#e74c3c" onclick="pickC(this)"></div>
+        <div class="cpick-dot" style="background:#9b59b6" data-c="#9b59b6" onclick="pickC(this)"></div>
+        <div class="cpick-dot" style="background:#e8873a" data-c="#e8873a" onclick="pickC(this)"></div>
+      </div>
+    </div>
+    <div class="form-g"><label class="form-lbl">Fecha límite</label><input class="form-inp" id="g-dead" type="date"></div>
+    <button class="btn btn-amber" onclick="addGoal()">Crear objetivo</button>
+  </div>
+</div>
+
+<!-- Goal progress -->
+<div class="moverlay" id="m-gprog" onclick="mOut(event,'m-gprog')">
+  <div class="mpanel">
+    <div class="m-handle"></div>
+    <div class="m-title">Progreso</div>
+    <div class="m-sub" id="gp-sub">objetivo activo</div>
+    <div class="form-g"><label class="form-lbl">Porcentaje completado</label><input class="form-inp" id="gp-val" type="number" min="0" max="100" step="5"></div>
+    <div class="form-g"><label class="form-lbl">Notas de avance</label><textarea class="form-ta" id="gp-notes" placeholder="¿Qué avanzaste?"></textarea></div>
+    <button class="btn btn-amber" onclick="saveGP()">Guardar</button>
+  </div>
+</div>
+
+<!-- Grade -->
+<div class="moverlay" id="m-grade" onclick="mOut(event,'m-grade')">
+  <div class="mpanel">
+    <div class="m-handle"></div>
+    <div class="m-title">Añadir nota</div>
+    <div class="m-sub">Registrar calificación</div>
+    <div class="form-g"><label class="form-lbl">Asignatura</label><select class="form-sel" id="gr-subj"></select></div>
+    <div class="form-g"><label class="form-lbl">Trimestre</label><select class="form-sel" id="gr-tri"><option value="1">Trimestre 1 — 33%</option><option value="2">Trimestre 2 — 33%</option><option value="3" selected>Trimestre 3 — 34%</option></select></div>
+    <div class="form-g"><label class="form-lbl">Nombre del examen / actividad</label><input class="form-inp" id="gr-name" placeholder="Ej: Examen Tema 4" autocomplete="off"></div>
+    <div class="form-g"><label class="form-lbl">Nota (0 – 10)</label><input class="form-inp" id="gr-val" type="number" min="0" max="10" step="0.01" placeholder="0.00"></div>
+    <div class="form-g"><label class="form-lbl">Peso en el trimestre (%)</label><input class="form-inp" id="gr-w" type="number" min="1" max="100" step="1" value="100"></div>
+    <button class="btn btn-amber" onclick="addGrade()">Guardar nota</button>
+  </div>
+</div>
+
+<!-- Grade detail -->
+<div class="moverlay" id="m-gdet" onclick="mOut(event,'m-gdet')">
+  <div class="mpanel">
+    <div class="m-handle"></div>
+    <div class="m-title" id="gd-title">Detalle</div>
+    <div id="gd-body"></div>
+  </div>
+</div>
+
+<!-- Pom config -->
+<div class="moverlay" id="m-pomcfg" onclick="mOut(event,'m-pomcfg')">
+  <div class="mpanel">
+    <div class="m-handle"></div>
+    <div class="m-title" id="pc-title">Configurar tiempo</div>
+    <div class="form-g"><label class="form-lbl">Minutos</label><input class="form-inp" id="pc-val" type="number" min="1" max="90" step="1"></div>
+    <button class="btn btn-amber" onclick="savePomCfg()">Guardar</button>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════
+   CONSTANTS & DATA
+════════════════════════════════════════ */
+const SUBJS = [
+  {k:'filosofia',     l:'Filosofía'},
+  {k:'lengua',        l:'Lengua Castellana'},
+  {k:'ingles',        l:'Inglés'},
+  {k:'matematicas',   l:'Matemáticas'},
+  {k:'biologia',      l:'Biología'},
+  {k:'digitalizacion',l:'Digitalización'},
+  {k:'fisicaquimica', l:'Física y Química'},
+  {k:'anatomia',      l:'Anatomía'},
+  {k:'ef',            l:'Educación Física'},
+  {k:'religion',      l:'Religión'},
+];
+const TW = [33,33,34]; // trimester weights
+
+const _ls = (k,d) => { try{ const v=localStorage.getItem('sc_'+k); return v!==null?JSON.parse(v):d; }catch{return d;} };
+const _ss = (k,v) => { try{ localStorage.setItem('sc_'+k,JSON.stringify(v)); }catch{} };
+const D = () => ({
+  tasks:    _ls('tasks',[]),
+  goals_w:  _ls('goals_w',[]),
+  goals_g:  _ls('goals_g',[]),
+  grades:   _ls('grades',{}),
+  pom:      _ls('pom',{focus:25,short:5,long:15}),
+  pom_h:    _ls('pom_h',[]),
+  curTri:   _ls('curTri',3),
+  username: _ls('username',''),
+});
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const fmt = (v,d=2) => (v!==null&&!isNaN(v)) ? Number(v).toFixed(d) : '—';
+
+/* ════════════════════════════════════════
+   ONBOARDING
+════════════════════════════════════════ */
+let obStep=0, obTri=3, goalColor='#f5a623', goalTab='weekly', gView='overview', tFilter='all', editGId=null;
+
+function buildObGrades(){
+  document.getElementById('ob-grades-container').innerHTML = SUBJS.map(s=>`
+    <div class="g-row">
+      <div class="g-row-name">${s.l}</div>
+      <div class="tri-grid">
+        ${[1,2,3].map(t=>`
+          <div class="tri-col">
+            <div class="tri-col-label">T${t}</div>
+            <input class="tri-num" type="number" min="0" max="10" step="0.01" id="ob-${s.k}-${t}" placeholder="—">
+          </div>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+function setTri(n){
+  obTri=n;
+  document.querySelectorAll('.tri-opt').forEach((b,i)=>b.classList.toggle('on',i+1===n));
+}
+
+function obNext(step){
+  if(step===0){
+    const name=document.getElementById('ob-name').value.trim();
+    if(name.length<2){
+      document.getElementById('ob-name').classList.add('err');
+      setTimeout(()=>document.getElementById('ob-name').classList.remove('err'),400);
+      toast('t-war','El nombre debe tener al menos 2 caracteres');
+      return;
+    }
+    _ss('username',name);
+    document.getElementById('ob-final-name').textContent=name;
+    goStep(1);
+  } else if(step===1){
+    saveObGrades();
+    goStep(2);
+  }
+}
+function obBack(){ goStep(0,true); }
+
+function goStep(n,back=false){
+  document.querySelectorAll('.onb-step').forEach((el,i)=>{
+    el.classList.remove('show');
+    if(i===n){ el.classList.add('show'); el.style.animation='none'; void el.offsetWidth; el.style.animation=''; }
+  });
+  document.querySelectorAll('.onb-pip').forEach((el,i)=>el.classList.toggle('on',i<=n));
+  obStep=n;
+}
+
+function saveObGrades(){
+  const data=D();
+  SUBJS.forEach(s=>{
+    if(!data.grades[s.k]) data.grades[s.k]={t1:[],t2:[],t3:[]};
+    [1,2,3].forEach(t=>{
+      const el=document.getElementById(`ob-${s.k}-${t}`);
+      if(!el) return;
+      const v=parseFloat(el.value);
+      if(!isNaN(v)&&v>=0&&v<=10)
+        data.grades[s.k][`t${t}`].push({id:Date.now()+Math.random()+'',name:'Nota trimestral',value:v,weight:100});
+    });
+  });
+  _ss('grades',data.grades);
+  _ss('curTri',obTri);
+}
+
+function obFinish(){
+  _ss('onboarding',true);
+  document.getElementById('onboarding').classList.add('exit');
+  setTimeout(()=>{ document.getElementById('onboarding').style.display='none'; initApp(); },550);
+}
+
+/* ════════════════════════════════════════
+   TOAST
+════════════════════════════════════════ */
+function toast(cls,msg){
+  const c=document.getElementById('toast-root');
+  const el=document.createElement('div');
+  el.className=`toast ${cls}`;
+  const icons={
+    't-ok':'<svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>',
+    't-war':'<svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+    't-err':'<svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+  };
+  el.innerHTML=(icons[cls]||'')+`<span>${msg}</span>`;
+  c.appendChild(el);
+  setTimeout(()=>{ el.classList.add('out'); setTimeout(()=>el.remove(),280); },2600);
+}
+
+/* ════════════════════════════════════════
+   MODAL
+════════════════════════════════════════ */
+const openM = id => document.getElementById(id).classList.add('open');
+const closeM = id => document.getElementById(id).classList.remove('open');
+function mOut(e,id){ if(e.target.id===id) closeM(id); }
+
+/* ════════════════════════════════════════
+   NAVIGATION
+════════════════════════════════════════ */
+function nav(scr){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+  document.querySelectorAll('.bnav-item').forEach(b=>b.classList.remove('on'));
+  document.getElementById('s-'+scr).classList.add('on');
+  document.getElementById('nav-'+scr).classList.add('on');
+  ({home:renderHome,tasks:renderTasks,goals:renderGoals,grades:renderGrades,pomodoro:renderPom})[scr]?.();
+}
+
+/* ════════════════════════════════════════
+   GRADE MATH
+════════════════════════════════════════ */
+function triAvg(ents){
+  if(!ents||!ents.length) return null;
+  const tw=ents.reduce((s,e)=>s+(e.weight||100),0);
+  if(!tw) return null;
+  return ents.reduce((s,e)=>s+e.value*(e.weight||100),0)/tw;
+}
+function subjAvg(sg){
+  let tw=0,tv=0;
+  [1,2,3].forEach((t,i)=>{ const a=triAvg((sg||{})[`t${t}`]); if(a!==null){tw+=TW[i];tv+=a*TW[i];} });
+  return tw?tv/tw:null;
+}
+function courseAvg(grades){
+  const avgs=SUBJS.map(s=>subjAvg(grades[s.k])).filter(v=>v!==null);
+  return avgs.length?avgs.reduce((a,b)=>a+b,0)/avgs.length:null;
+}
+function grCls(v){
+  if(v===null||isNaN(v)) return '';
+  return v>=7?'c-pass':v>=5?'c-warn':'c-fail';
+}
+
+/* ════════════════════════════════════════
+   HOME / DASHBOARD
+════════════════════════════════════════ */
+function renderHome(){
+  const data=D();
+  const h=new Date().getHours();
+  document.getElementById('g-time').textContent = h<12?'Buenos días':h<20?'Buenas tardes':'Buenas noches';
+  document.getElementById('g-name').textContent = data.username||'Estudiante';
+  document.getElementById('d-tri').textContent  = 'T'+(data.curTri||3);
+
+  // Avg
+  const avg=courseAvg(data.grades);
+  const avgEl=document.getElementById('d-avg');
+  avgEl.textContent=fmt(avg); avgEl.className='prime-num '+grCls(avg);
+  const pct=avg!==null?Math.round(avg/10*100):0;
+  document.getElementById('d-prog-pct').textContent=pct+'%';
+  document.getElementById('d-prog-bar').style.width=pct+'%';
+
+  // Strip stats
+  const pending=data.tasks.filter(t=>!t.done).length;
+  document.getElementById('d-tasks-n').textContent=pending;
+
+  const wg=data.goals_w;
+  const wPct=wg.length?Math.round(wg.filter(g=>g.progress>=100).length/wg.length*100):0;
+  document.getElementById('d-goals-pct').textContent=wPct+'%';
+
+  const today=new Date().toDateString();
+  const todaySess=data.pom_h.filter(h2=>new Date(h2.ts).toDateString()===today);
+  document.getElementById('d-pom-n').textContent=todaySess.length;
+
+  // Best/worst
+  const ranked=SUBJS.map(s=>({s,avg:subjAvg(data.grades[s.k])})).filter(x=>x.avg!==null).sort((a,b)=>b.avg-a.avg);
+  if(ranked.length){
+    document.getElementById('d-best-n').textContent=ranked[0].s.l;
+    document.getElementById('d-best-v').textContent=fmt(ranked[0].avg);
+    const worst=ranked[ranked.length-1];
+    document.getElementById('d-worst-n').textContent=worst.s.l;
+    document.getElementById('d-worst-v').textContent=fmt(worst.avg);
+  }
+
+  // Goals mini rings
+  renderGoalsMini(data);
+
+  // Heatmap
+  buildHeatmap(data.pom_h);
+
+  // Task preview
+  const tp=data.tasks.filter(t=>!t.done).slice(0,3);
+  document.getElementById('d-tasks-preview').innerHTML=tp.length?tp.map(taskHTML).join(''):emptyHTML('Sin tareas pendientes');
+}
+
+function renderGoalsMini(data){
+  const allGoals=[
+    {label:'Semanales',goals:data.goals_w,color:'var(--a)'},
+    {label:'Globales',goals:data.goals_g,color:'var(--info)'},
+  ];
+  document.getElementById('d-goals-mini').innerHTML=allGoals.map(({label,goals,color})=>{
+    const done=goals.filter(g=>g.progress>=100).length;
+    const pct=goals.length?Math.round(done/goals.length*100):0;
+    const circ=2*Math.PI*16; // r=16 → 100.5
+    const offset=circ*(1-pct/100);
+    return `
+      <div class="goal-mini-card">
+        <div class="gmc-ring">
+          <svg width="38" height="38" viewBox="0 0 38 38">
+            <circle class="gmc-ring-bg" cx="19" cy="19" r="16"/>
+            <circle class="gmc-ring-fg" cx="19" cy="19" r="16"
+              stroke-dasharray="${circ.toFixed(1)}" stroke-dashoffset="${offset.toFixed(1)}"
+              stroke="${color}" transform="rotate(-90 19 19)"/>
+          </svg>
+          <div class="gmc-pct">${pct}%</div>
+        </div>
+        <div class="gmc-info">
+          <div class="gmc-label">${label}</div>
+          <div class="gmc-val">${done}<span style="font-size:11px;color:var(--t3);font-weight:400"> / ${goals.length}</span></div>
+          <div class="gmc-sub">${goals.length===0?'Sin metas':pct>=100?'Todas completadas':'En progreso'}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function buildHeatmap(hist){
+  const el=document.getElementById('d-hmap');
+  const today=new Date(); today.setHours(0,0,0,0);
+  const map={};
+  hist.forEach(h=>{ const d=new Date(h.ts); d.setHours(0,0,0,0); const k=d.getTime(); map[k]=(map[k]||0)+1; });
+  let html='';
+  for(let w=3;w>=0;w--){
+    let col='';
+    for(let d=6;d>=0;d--){
+      const dt=new Date(today); dt.setDate(today.getDate()-w*7-d);
+      const cnt=map[dt.getTime()]||0;
+      const cls=cnt===0?'':cnt===1?'hc1':cnt===2?'hc2':cnt===3?'hc3':'hc4';
+      col+=`<div class="hmap-cell ${cls}"></div>`;
+    }
+    html+=`<div class="hmap-col">${col}</div>`;
+  }
+  el.innerHTML=html;
+}
+
+/* ════════════════════════════════════════
+   TASKS
+════════════════════════════════════════ */
+function taskHTML(t){
+  const priMap={high:'tp-h',med:'tp-m',low:'tp-l'};
+  const priCls=priMap[t.priority||'med'];
+  return `
+    <div class="task-item ${t.done?'done':''}" id="ti-${t.id}">
+      <div class="task-pri-bar ${priCls}"></div>
+      <div class="task-cb" onclick="toggleTask('${t.id}')">
+        <svg class="task-cb-mark" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div class="task-body">
+        <div class="task-title-txt">${esc(t.title)}</div>
+        <div class="task-meta-txt">${t.subject?t.subject+' · ':''}${t.date||'Sin fecha'}</div>
+      </div>
+      <button class="task-del" onclick="delTask('${t.id}')">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>
+      </button>
+    </div>`;
+}
+
+function emptyHTML(msg){
+  return `<div class="empty"><div class="empty-ico"><svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div><div class="empty-txt">${msg}</div></div>`;
+}
+
+function renderTasks(){
+  const data=D();
+  let tasks=data.tasks;
+  if(tFilter==='pending') tasks=tasks.filter(t=>!t.done);
+  if(tFilter==='done')    tasks=tasks.filter(t=>t.done);
+  document.getElementById('tasks-list').innerHTML=tasks.length?tasks.map(taskHTML).join(''):emptyHTML('Sin tareas aquí');
+  fillSel('t-subj');
+}
+
+function setFilter(f){
+  tFilter=f;
+  ['all','pending','done'].forEach(x=>document.getElementById('ch-'+x)?.classList.toggle('on',x===f));
+  renderTasks();
+}
+
+function fillSel(id){
+  const el=document.getElementById(id); if(!el) return;
+  const cur=el.value;
+  el.innerHTML='<option value="">Sin asignatura</option>'+SUBJS.map(s=>`<option value="${s.l}">${s.l}</option>`).join('');
+  if(cur) el.value=cur;
+}
+
+function addTask(){
+  const tit=document.getElementById('t-tit').value.trim();
+  if(!tit){toast('t-war','Escribe el título');return;}
+  const data=D();
+  data.tasks.unshift({id:Date.now()+'',title:tit,subject:document.getElementById('t-subj').value,date:document.getElementById('t-date').value,priority:document.getElementById('t-pri').value,done:false,created:Date.now()});
+  _ss('tasks',data.tasks);
+  closeM('m-task');
+  document.getElementById('t-tit').value='';
+  toast('t-ok','Tarea añadida');
+  renderTasks(); renderHome();
+}
+
+function toggleTask(id){
+  const data=D(); const t=data.tasks.find(x=>x.id===id);
+  if(t){t.done=!t.done;_ss('tasks',data.tasks);renderTasks();renderHome();}
+}
+function delTask(id){
+  const data=D(); _ss('tasks',data.tasks.filter(t=>t.id!==id));
+  toast('t-ok','Tarea eliminada'); renderTasks(); renderHome();
+}
+
+/* ════════════════════════════════════════
+   GOALS
+════════════════════════════════════════ */
+function setGoalTab(tab){
+  goalTab=tab;
+  document.getElementById('gt-weekly').classList.toggle('on',tab==='weekly');
+  document.getElementById('gt-global').classList.toggle('on',tab==='global');
+  document.getElementById('g-add-btn').textContent=tab==='weekly'?'+ Semanal':'+ Global';
+  renderGoals();
+}
+
+function openAddGoal(){
+  editGId=null;
+  document.getElementById('gm-title').textContent=goalTab==='weekly'?'Objetivo semanal':'Objetivo global';
+  document.getElementById('gm-sub').textContent=goalTab==='weekly'?'Meta para esta semana':'Meta a largo plazo';
+  document.getElementById('g-tit').value='';
+  document.getElementById('g-desc').value='';
+  document.getElementById('g-dead').value='';
+  openM('m-goal');
+}
+
+function pickC(el){
+  document.querySelectorAll('.cpick-dot').forEach(d=>d.classList.remove('on'));
+  el.classList.add('on'); goalColor=el.dataset.c;
+}
+
+function addGoal(){
+  const tit=document.getElementById('g-tit').value.trim();
+  if(!tit){toast('t-war','Escribe el objetivo');return;}
+  const data=D();
+  const g={id:Date.now()+'',title:tit,desc:document.getElementById('g-desc').value.trim(),color:goalColor,deadline:document.getElementById('g-dead').value,progress:0,created:Date.now()};
+  if(goalTab==='weekly'){data.goals_w.unshift(g);_ss('goals_w',data.goals_w);}
+  else{data.goals_g.unshift(g);_ss('goals_g',data.goals_g);}
+  closeM('m-goal'); toast('t-ok','Objetivo creado'); renderGoals(); renderHome();
+}
+
+function openGP(id){
+  editGId=id;
+  const data=D();
+  const arr=goalTab==='weekly'?data.goals_w:data.goals_g;
+  const g=arr.find(x=>x.id===id); if(!g) return;
+  document.getElementById('gp-sub').textContent=g.title.toUpperCase();
+  document.getElementById('gp-val').value=g.progress||0;
+  document.getElementById('gp-notes').value='';
+  openM('m-gprog');
+}
+
+function saveGP(){
+  const pct=parseInt(document.getElementById('gp-val').value);
+  if(isNaN(pct)||pct<0||pct>100){toast('t-war','Valor entre 0 y 100');return;}
+  const data=D();
+  const key=goalTab==='weekly'?'goals_w':'goals_g';
+  const arr=goalTab==='weekly'?data.goals_w:data.goals_g;
+  const g=arr.find(x=>x.id===editGId);
+  if(g){g.progress=pct;_ss(key,arr);}
+  closeM('m-gprog');
+  toast('t-ok',pct>=100?'Objetivo completado':'Progreso guardado');
+  renderGoals(); renderHome();
+}
+
+function delGoal(id){
+  const data=D();
+  const key=goalTab==='weekly'?'goals_w':'goals_g';
+  const arr=goalTab==='weekly'?data.goals_w:data.goals_g;
+  _ss(key,arr.filter(g=>g.id!==id));
+  toast('t-ok','Objetivo eliminado'); renderGoals(); renderHome();
+}
+
+function renderGoals(){
+  const data=D();
+  const goals=goalTab==='weekly'?data.goals_w:data.goals_g;
+  const el=document.getElementById('goals-list');
+  if(!goals.length){el.innerHTML=emptyHTML(goalTab==='weekly'?'Sin objetivos semanales':'Sin objetivos globales');return;}
+  el.innerHTML=goals.map(g=>{
+    const pct=g.progress||0;
+    const bc=pct>=100?'var(--pass)':g.color;
+    return `
+      <div class="goal-card">
+        <div class="goal-accent" style="background:${g.color}"></div>
+        <div class="goal-body" onclick="openGP('${g.id}')">
+          <div class="goal-t">${esc(g.title)}</div>
+          <div class="goal-s">${g.desc?esc(g.desc):g.deadline?'Límite: '+g.deadline:goalTab==='weekly'?'Esta semana':'Largo plazo'}</div>
+          <div class="goal-prow">
+            <div style="flex:1"><div class="pbar-track"><div class="pbar-fill" style="width:${pct}%;background:${bc}"></div></div></div>
+            <div class="goal-pval" style="color:${g.color}">${pct}%</div>
+          </div>
+          ${pct>=100?`<span class="badge b-pass" style="margin-top:6px">Completado</span>`:''}
+        </div>
+        <button onclick="delGoal('${g.id}')" style="background:none;border:none;color:var(--t3);cursor:pointer;padding:4px;flex-shrink:0;align-self:flex-start">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+        </button>
+      </div>`;
+  }).join('');
+}
+
+/* ════════════════════════════════════════
+   GRADES
+════════════════════════════════════════ */
+function fillGradeSel(){
+  const el=document.getElementById('gr-subj'); if(!el) return;
+  el.innerHTML=SUBJS.map(s=>`<option value="${s.k}">${s.l}</option>`).join('');
+}
+
+function addGrade(){
+  const sk=document.getElementById('gr-subj').value;
+  const tri=document.getElementById('gr-tri').value;
+  const name=document.getElementById('gr-name').value.trim()||'Examen';
+  const val=parseFloat(document.getElementById('gr-val').value);
+  const w=parseInt(document.getElementById('gr-w').value)||100;
+  if(!sk){toast('t-war','Selecciona la asignatura');return;}
+  if(isNaN(val)||val<0||val>10){toast('t-war','Nota entre 0 y 10');return;}
+  const data=D();
+  if(!data.grades[sk]) data.grades[sk]={t1:[],t2:[],t3:[]};
+  data.grades[sk][`t${tri}`].push({id:Date.now()+'',name,value:val,weight:w});
+  _ss('grades',data.grades);
+  closeM('m-grade');
+  document.getElementById('gr-val').value='';
+  document.getElementById('gr-name').value='';
+  toast('t-ok','Nota guardada');
+  renderGrades(); renderHome();
+}
+
+function setGView(v){
+  gView=v;
+  const views=['overview','t1','t2','t3'];
+  document.querySelectorAll('.gtab').forEach((t,i)=>t.classList.toggle('on',views[i]===v));
+  renderGradesContent();
+}
+
+function renderGrades(){
+  const data=D();
+  const avg=courseAvg(data.grades);
+  const el=document.getElementById('gr-avg');
+  el.textContent=fmt(avg);
+  el.className='gsb-val '+grCls(avg).replace('c-','').split('-')[0]; // apply color
+  // Use inline style for clarity
+  const colorMap={'c-pass':'var(--pass)','c-warn':'var(--warn)','c-fail':'var(--fail)','':`var(--t1)`};
+  el.style.color=colorMap[grCls(avg)]||'var(--t1)';
+  document.getElementById('gr-tri-lbl').textContent='T'+(data.curTri||3);
+  fillGradeSel();
+  renderGradesContent();
+}
+
+function renderGradesContent(){
+  const data=D();
+  const c=document.getElementById('grades-content');
+  if(gView==='overview'){
+    c.innerHTML=SUBJS.map(s=>{
+      const sg=data.grades[s.k]||{t1:[],t2:[],t3:[]};
+      const overall=subjAvg(sg);
+      const tAs=[1,2,3].map(t=>triAvg(sg[`t${t}`]));
+      const colorMap={'c-pass':'var(--pass)','c-warn':'var(--warn)','c-fail':'var(--fail)','':`var(--t2)`};
+      const oc=colorMap[grCls(overall)];
+      return `
+        <div class="subj-c" onclick="openSubjDetail('${s.k}')">
+          <div class="subj-c-head">
+            <div class="subj-c-name">${s.l}</div>
+            <div class="subj-c-avg" style="color:${oc}">${fmt(overall)}</div>
+          </div>
+          <div class="tri-boxes">
+            ${[0,1,2].map(i=>{
+              const a=tAs[i];
+              const pts=a!==null?(a/10*TW[i]).toFixed(1):'—';
+              const tc=colorMap[grCls(a)];
+              return `<div class="tbox">
+                <div class="tbox-eye">T${i+1}·${TW[i]}%</div>
+                <div class="tbox-val" style="color:${tc}">${fmt(a,1)}</div>
+                <div class="tbox-pts">${pts}/${TW[i]}pt</div>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>`;
+    }).join('');
+  } else {
+    const t=parseInt(gView[1]);
+    const w=TW[t-1];
+    const colorMap={'c-pass':'var(--pass)','c-warn':'var(--warn)','c-fail':'var(--fail)','':`var(--t2)`};
+    c.innerHTML=SUBJS.map(s=>{
+      const sg=data.grades[s.k]||{};
+      const ents=(sg[`t${t}`]||[]);
+      const a=triAvg(ents);
+      const pts=a!==null?(a/10*w).toFixed(2):'—';
+      return `
+        <div class="subj-c" onclick="openSubjDetail('${s.k}')">
+          <div class="subj-c-head">
+            <div class="subj-c-name">${s.l}</div>
+            <div>
+              <div class="subj-c-avg" style="font-size:24px;color:${colorMap[grCls(a)]}">${fmt(a)}</div>
+              <div style="font-family:var(--f-mono);font-size:9px;color:var(--t3);text-align:right;margin-top:2px">${pts} / ${w}pt</div>
+            </div>
+          </div>
+          <div style="font-family:var(--f-mono);font-size:10px;color:var(--t3)">${ents.length} nota${ents.length!==1?'s':''} · T${t}</div>
+        </div>`;
+    }).join('');
+  }
+}
+
+function openSubjDetail(key){
+  const data=D();
+  const s=SUBJS.find(x=>x.k===key);
+  const sg=data.grades[key]||{t1:[],t2:[],t3:[]};
+  const colorMap={'c-pass':'var(--pass)','c-warn':'var(--warn)','c-fail':'var(--fail)','':`var(--t2)`};
+  document.getElementById('gd-title').textContent=s.l;
+  document.getElementById('gd-body').innerHTML=[1,2,3].map((t,i)=>{
+    const ents=sg[`t${t}`]||[];
+    const a=triAvg(ents);
+    const pts=a!==null?(a/10*TW[i]).toFixed(2):'—';
+    const c=colorMap[grCls(a)];
+    return `
+      <div style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-family:var(--f-display);font-size:18px;letter-spacing:.04em">T${t}</span>
+            <span class="badge b-amber">${TW[i]}%</span>
+          </div>
+          <div style="text-align:right">
+            <div style="font-family:var(--f-mono);font-size:26px;font-weight:700;letter-spacing:-.03em;color:${c}">${fmt(a)}</div>
+            <div style="font-family:var(--f-mono);font-size:9px;color:var(--t3)">${pts} pts nota final</div>
+          </div>
+        </div>
+        ${ents.length?ents.map(e=>`
+          <div class="g-entry">
+            <div class="g-entry-val" style="color:${colorMap[grCls(e.value)]}">${fmt(e.value,2)}</div>
+            <div class="g-entry-info">
+              <div class="g-entry-name">${esc(e.name)}</div>
+              <div class="g-entry-meta">Peso: ${e.weight}%</div>
+            </div>
+            <button class="g-entry-del" onclick="delGrade('${key}','t${t}','${e.id}')">
+              <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+            </button>
+          </div>`).join(''):'<div style="font-family:var(--f-mono);font-size:10px;color:var(--t3);padding:6px 0">Sin notas registradas</div>'}
+        <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="quickGrade('${key}',${t})">+ Nota T${t}</button>
+      </div>
+      ${t<3?'<div class="divider"></div>':''}`;
+  }).join('');
+  openM('m-gdet');
+}
+
+function quickGrade(key,t){
+  closeM('m-gdet');
+  setTimeout(()=>{ document.getElementById('gr-subj').value=key; document.getElementById('gr-tri').value=t; openM('m-grade'); },200);
+}
+
+function delGrade(sk,tri,id){
+  const data=D();
+  if(data.grades[sk]&&data.grades[sk][tri]){
+    data.grades[sk][tri]=data.grades[sk][tri].filter(g=>g.id!==id);
+    _ss('grades',data.grades);
+    toast('t-ok','Nota eliminada');
+    openSubjDetail(sk); renderGrades(); renderHome();
+  }
+}
+
+/* ════════════════════════════════════════
+   POMODORO
+════════════════════════════════════════ */
+let pomRun=false,pomTimer=null,pomLeft=0,pomTotal=0,pomMode='focus',pomSess=0,pomCfgKey=null;
+const getPomCfg=()=>_ls('pom',{focus:25,short:5,long:15});
+
+function renderPom(){
+  const cfg=getPomCfg();
+  document.getElementById('ps-f').textContent=cfg.focus+'m';
+  document.getElementById('ps-s').textContent=cfg.short+'m';
+  document.getElementById('ps-l').textContent=cfg.long+'m';
+  if(!pomRun&&pomLeft===0){ pomLeft=cfg.focus*60; pomTotal=pomLeft; }
+  updPom(); renderPomHist();
+}
+
+function updPom(){
+  const m=Math.floor(pomLeft/60), s=pomLeft%60;
+  document.getElementById('pom-time').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  const circ=527.8;
+  const pct=pomTotal>0?pomLeft/pomTotal:1;
+  const ring=document.getElementById('pom-ring');
+  ring.style.strokeDashoffset=(circ*(1-pct)).toFixed(2);
+  const colors={focus:'var(--a)',short:'var(--pass)',long:'var(--info)'};
+  ring.style.stroke=colors[pomMode];
+  const labels={focus:'ENFOQUE',short:'DESCANSO CORTO',long:'DESCANSO LARGO'};
+  document.getElementById('pom-eye').textContent=labels[pomMode];
+  document.getElementById('pom-st').textContent=pomRun?'en curso':'pausado';
+  // Play/pause icon
+  const ico=document.getElementById('pom-ico');
+  if(pomRun){
+    ico.innerHTML='<rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>';
+    ico.setAttribute('fill','currentColor');
+  } else {
+    ico.innerHTML='<polygon points="5 3 19 12 5 21 5 3"/>';
+    ico.setAttribute('fill','currentColor');
+  }
+  // Dots
+  const dots=document.getElementById('pom-dots');
+  dots.innerHTML=Array.from({length:4}).map((_,i)=>`<div class="pom-dot ${i<pomSess?'done':''}"></div>`).join('');
+}
+
+function pomToggle(){
+  if(pomRun){ clearInterval(pomTimer); pomRun=false; }
+  else{
+    pomRun=true;
+    pomTimer=setInterval(()=>{ pomLeft--; if(pomLeft<=0){pomComplete();return;} updPom(); },1000);
+  }
+  updPom();
+}
+
+function pomComplete(){
+  clearInterval(pomTimer); pomRun=false;
+  const cfg=getPomCfg();
+  if(pomMode==='focus'){
+    pomSess=(pomSess+1)%5;
+    const h=_ls('pom_h',[]); h.push({ts:Date.now(),minutes:cfg.focus}); _ss('pom_h',h);
+    toast('t-ok','Sesión completada');
+    pomMode=pomSess===0?'long':'short';
+  } else { toast('t-ok','Descanso terminado'); pomMode='focus'; }
+  const cfg2=getPomCfg();
+  pomLeft=(pomMode==='focus'?cfg2.focus:pomMode==='short'?cfg2.short:cfg2.long)*60;
+  pomTotal=pomLeft; updPom(); renderPomHist();
+}
+
+function pomReset(){
+  clearInterval(pomTimer); pomRun=false;
+  const cfg=getPomCfg();
+  pomLeft=(pomMode==='focus'?cfg.focus:pomMode==='short'?cfg.short:cfg.long)*60;
+  pomTotal=pomLeft; updPom();
+}
+
+function pomSkip(){
+  clearInterval(pomTimer); pomRun=false;
+  pomMode=pomMode==='focus'?(pomSess>=3?'long':'short'):'focus';
+  const cfg=getPomCfg();
+  pomLeft=(pomMode==='focus'?cfg.focus:pomMode==='short'?cfg.short:cfg.long)*60;
+  pomTotal=pomLeft; updPom();
+}
+
+function pomCfg(key){
+  pomCfgKey=key;
+  const labels={focus:'Tiempo de enfoque',short:'Descanso corto',long:'Descanso largo'};
+  document.getElementById('pc-title').textContent=labels[key];
+  document.getElementById('pc-val').value=getPomCfg()[key];
+  openM('m-pomcfg');
+}
+
+function savePomCfg(){
+  const v=parseInt(document.getElementById('pc-val').value);
+  if(!v||v<1||v>90){toast('t-war','Entre 1 y 90 minutos');return;}
+  const cfg=getPomCfg(); cfg[pomCfgKey]=v; _ss('pom',cfg);
+  closeM('m-pomcfg');
+  if(!pomRun) pomReset();
+  renderPom();
+}
+
+function renderPomHist(){
+  const today=new Date().toDateString();
+  const hist=_ls('pom_h',[]).filter(h=>new Date(h.ts).toDateString()===today);
+  const el=document.getElementById('pom-hist'); if(!el) return;
+  if(!hist.length){el.innerHTML=emptyHTML('Sin sesiones completadas hoy');return;}
+  el.innerHTML=hist.slice(-6).reverse().map(h=>`
+    <div class="log-item">
+      <div class="log-ico">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <div class="log-info">
+        <div class="log-t">Sesión de enfoque</div>
+        <div class="log-m">${new Date(h.ts).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})}</div>
+      </div>
+      <div class="log-dur">${h.minutes}m</div>
+    </div>`).join('');
+}
+
+/* ════════════════════════════════════════
+   INIT
+════════════════════════════════════════ */
+function initApp(){
+  document.getElementById('app').classList.add('on');
+  fillSel('t-subj'); fillGradeSel();
+  const today=new Date().toISOString().split('T')[0];
+  const di=document.getElementById('t-date'); if(di) di.value=today;
+  const data=D();
+  const gts=document.getElementById('gr-tri'); if(gts) gts.value=data.curTri||3;
+  renderHome();
+}
+
+window.addEventListener('DOMContentLoaded',()=>{
+  buildObGrades();
+  if(localStorage.getItem('sc_onboarding')){
+    document.getElementById('onboarding').style.display='none';
+    initApp();
+  }
+});
+</script>
+</body>
+</html>
